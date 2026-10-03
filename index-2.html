@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Опрос: знакомы ли вы с биотехнологиями?</title>
+<style>
+:root{--bg:#f7f8f5;--card:#fff;--tx:#1d2a22;--mu:#66736b;--ac:#2e8b57;--acs:#e3f3ea;--bd:#dde3de;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a15;--card:#1b261f;--tx:#e8efe9;--mu:#9aa89f;--ac:#4fc08a;--acs:#21392c;--bd:#2c3b31}}
+:root[data-theme="dark"]{--bg:#121a15;--card:#1b261f;--tx:#e8efe9;--mu:#9aa89f;--ac:#4fc08a;--acs:#21392c;--bd:#2c3b31}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 14px 40px}
+h1{font-size:1.5rem;margin:8px 0 6px}
+p.lead{color:var(--mu);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:1rem;margin:0 0 10px}
+.sec{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ac);margin:22px 4px 8px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1px solid var(--bd);background:transparent;color:var(--tx);border-radius:999px;padding:8px 13px;font:inherit;font-size:.9rem;cursor:pointer}
+.opt.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.tech{margin-bottom:12px}
+.tech b{display:block}
+.tech small{color:var(--mu);display:block;margin-bottom:8px}
+textarea{width:100%;min-height:80px;border:1px solid var(--bd);border-radius:10px;padding:10px;background:transparent;color:var(--tx);font:inherit}
+.go{width:100%;margin-top:8px;padding:14px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.go:disabled{opacity:.5;cursor:default}
+.msg{margin-top:10px;color:var(--mu);font-size:.9rem;text-align:center}
+.err{color:#c0392b}
+.done{text-align:center;padding:40px 10px}
+.done .big{font-size:3rem}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const T=[
+["CRISPR и редактирование генома","«Генетические ножницы» для точной правки ДНК"],
+["мРНК-вакцины","Как вакцины против COVID-19 от Pfizer и Moderna"],
+["ГМО-растения","Культуры с изменённым геномом: кукуруза, соя, золотой рис"],
+["Генная терапия","Лечение наследственных болезней заменой или правкой генов"],
+["CAR-T клеточная терапия","Иммунные клетки пациента, перепрограммированные против рака"],
+["Стволовые клетки","Клетки, способные превращаться в разные ткани"],
+["Секвенирование ДНК","Расшифровка генома, генетические тесты вроде 23andMe"],
+["Синтетическая биология","Создание новых организмов и биосистем с заданными свойствами"],
+["Клонирование","Получение генетической копии организма (овца Долли)"],
+["Органоиды и биопечать","Выращивание мини-органов и печать тканей на 3D-принтере"],
+["Лабораторное (клеточное) мясо","Мясо, выращенное из клеток без забоя животных"],
+["Фаговая терапия","Лечение бактериальных инфекций вирусами-бактериофагами"],
+["Микробиом и пересадка микробиоты","Роль кишечных бактерий и их терапевтическое применение"],
+["Биотопливо и ферментация","Топливо и вещества из водорослей, дрожжей, бактерий"]
+];
+const L=["Не слышал(а)","Слышал(а) название","Примерно понимаю","Хорошо знаю"];
+const Q=[
+["age","Ваш возраст",["до 18","18–24","25–34","35–49","50+"]],
+["field","Ваша сфера",["Биология / медицина","Другая наука / техника","Гуманитарная / творческая","Бизнес / другое","Учусь"]],
+["src","Откуда чаще узнаёте о науке",["Соцсети и видео","Новости и СМИ","Научпоп и книги","Учёба / работа","Почти не интересуюсь"]],
+["att","Как вы относитесь к развитию биотехнологий",["Скорее опасаюсь","Нейтрально","Скорее поддерживаю","Очень жду новых открытий"]]
+];
+const S={tech:{},q:{},comment:""};
+const ACCESS_KEY="b228e317-5950-4f19-9ddc-977a4a64cae1";
+let canSend=true,sent=false;
+const app=document.getElementById("app");
+function el(h){const d=document.createElement("div");d.innerHTML=h;return d.firstElementChild}
+function render(){
+ app.innerHTML="";
+ if(sent){app.append(el('<div class="done"><div class="big">🧬</div><h1>Спасибо за ответы!</h1><p class="lead">Ваш голос учтён.</p></div>'));return}
+ app.append(el('<div><h1>Знакомы ли вы с биотехнологиями?</h1><p class="lead">Опрос анонимный и занимает около 2 минут. Отметьте, насколько вам знакома каждая технология.</p></div>'));
+ app.append(el('<div class="sec">Часть 1. Технологии</div>'));
+ const c=el('<div class="card"></div>');
+ T.forEach((t,i)=>{
+  const w=el('<div class="tech"><b></b><small></small><div class="opts"></div></div>');
+  w.querySelector("b").textContent=t[0];w.querySelector("small").textContent=t[1];
+  const o=w.querySelector(".opts");
+  L.forEach((l,v)=>{const b=el('<button type="button" class="opt"></button>');b.textContent=l;
+   if(S.tech[i]===v)b.classList.add("on");
+   b.onclick=()=>{S.tech[i]=v;[...o.children].forEach((x,j)=>x.classList.toggle("on",j===v));upd()};o.append(b)});
+  c.append(w)});
+ app.append(c);
+ app.append(el('<div class="sec">Часть 2. О вас</div>'));
+ Q.forEach(q=>{
+  const k=el('<div class="card"><h2></h2><div class="opts"></div></div>');
+  k.querySelector("h2").textContent=q[1];
+  const o=k.querySelector(".opts");
+  q[2].forEach(l=>{const b=el('<button type="button" class="opt"></button>');b.textContent=l;
+   if(S.q[q[0]]===l)b.classList.add("on");
+   b.onclick=()=>{S.q[q[0]]=l;[...o.children].forEach(x=>x.classList.toggle("on",x===b));upd()};o.append(b)});
+  app.append(k)});
+ const cm=el('<div class="card"><h2>Что-то ещё? (необязательно)</h2><textarea maxlength="500"></textarea></div>');
+ const ta=cm.querySelector("textarea");ta.value=S.comment;ta.oninput=()=>S.comment=ta.value;
+ app.append(cm);
+ const go=el('<button class="go" id="go" type="button">Отправить</button>');
+ go.onclick=send;app.append(go);
+ app.append(el('<div class="msg" id="msg"></div>'));
+ upd();
+}
+function upd(){
+ const go=document.getElementById("go"),m=document.getElementById("msg");if(!go)return;
+ const left=T.length-Object.keys(S.tech).length+Q.length-Object.keys(S.q).length;
+ go.disabled=left>0||!canSend;
+ m.className="msg";
+ m.textContent=left>0?"Осталось ответить: "+left:"";
+}
+async function send(){
+ const go=document.getElementById("go"),m=document.getElementById("msg");
+ go.disabled=true;m.textContent="Отправляю…";
+ const body={access_key:ACCESS_KEY,subject:"Новый ответ: опрос о биотехнологиях",from_name:"Опрос"};
+ T.forEach((t,i)=>body[t[0]]=L[S.tech[i]]);
+ Q.forEach(q=>body[q[1]]=S.q[q[0]]);
+ body["Комментарий"]=S.comment.trim()||"—";
+ try{
+  const r=await fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(!j.success)throw new Error(j.message);
+  sent=true;render();
+ }catch(e){m.className="msg err";m.textContent="Не удалось отправить. Попробуйте ещё раз.";go.disabled=false}
+}
+render();
+</script>
+</body>
+</html>
